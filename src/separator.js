@@ -56,16 +56,20 @@ export const CSharpApiEncodeStr = (s) => {
 }
 
 const postHandle = (post) => {
-  let postArr = post.replace(/\n/g, "").split("||");
+  let postArr = post.split("||");
 
   postArr = postArr.map((r) => {
     const pos = r.indexOf("&&");
-    console.log(pos);
-    const result = r.substring(0, pos).replace(/(\(|\))/gim, "");
+    if (pos > 0) {
+      const result = r.substring(0, pos).replace(/(\(|\))/gim, "");
 
-    const cond = r.substring(pos + 2).replace(/(\(|\))/gim, "");
-
-    return { result, cond };
+      const cond = r.substring(pos + 2).replace(/(\(|\))/gim, "");
+      console.log(result);
+      return { result, cond };
+    } else {
+      const result = post.replace(/(\(|\))/gim, "");
+      return { result, cond: "" };
+    }
   });
   return postArr;
 };
@@ -132,8 +136,12 @@ const parseFunctionPrompt = (input, output, functionName) => {
 }
 
 const _parsePreCondition = (cond) => {
+  if (cond == "")
+    cond = "true"
   cond = cond.replace(/=/gi, "==");
   cond = cond.replace(/!==/gi, "!=");
+  cond = cond.replace(/>==/gi, "!=");
+  cond = cond.replace(/<==/gi, "!=");
 
   return `if (${cond}) {
     return 1;
@@ -143,9 +151,14 @@ const _parsePreCondition = (cond) => {
 }
 
 const _parsePostCondition = (res, cond) => {
+  if (cond == "")
+    cond = "true"
   cond = cond.replace(/=/gi, "==");
   cond = cond.replace(/!==/gi, "!=");
+  cond = cond.replace(/>==/gi, "!=");
+  cond = cond.replace(/<==/gi, "!=");
   res = res.replace(/FALSE|TRUE/gi, x => x.toLowerCase());
+
   return `if (${cond}) ${res};\n`
 }
 
@@ -228,7 +241,7 @@ const parseParams = (input, isRef = false, type = true) => {
 }
 
 export const convertToCSharp_display = (formal) => {
-  const par = separateFormal(dedent(formal));
+  const par = separateFormal(dedent(formal)); console.log(par);
   const str = dedent`
   using System;
 

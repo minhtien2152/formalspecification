@@ -117,8 +117,20 @@ const App = () => {
           <button style={{width: 'fit-content'}} onClick={handleConvertToCSharp} disabled={!isEditorReady}>
             Convert
           </button>
+          <button class="control" onClick={() => {
+            setFormal("");
+            setCode("");
+          }}>
+            <i class="fas fa-file"></i>
+          </button>
           <button class="control" onClick={() => {inputFileRef.current.click();}}>
             <i class="fas fa-folder-open"></i>
+          </button>
+          <button class="control" onClick={() => {
+            window.open("about:blank", "_self");
+            window.close();
+          }}>
+            <i class="fas fa-times"></i>
           </button>
           <input
             ref={inputFileRef}
@@ -137,7 +149,7 @@ const App = () => {
           <Editor
             height="calc(100% - 19px)" // By default, it fully fits with its parent
             theme={theme}
-            language="text"
+            language="go"
             loading={<Loader />}
             value={formal}
             onChange={(val, ev) => {setFormal(val)}}
