@@ -280,6 +280,24 @@ export const convertToCSharp_display = (formal) => {
   return dedent(str);
 }
 
+export const separateConsoleRead = (str) => {
+  const arr = str.split(";");
+  const listVar = arr.filter(x => x.indexOf("Console.ReadLine()") !== -1);
+  listVar.pop();
+
+  const listVal = [];
+  for (let i = 0; i < listVar.length; i++) {
+    const key = listVar[i].split("=")[0].replace(/\n/gim, "");
+    listVal.push(window.prompt(`Nhap ${key}:`, ''));
+  }
+
+  for (let i = 0; i < listVar.length; i++) {
+    const key = listVar[i].split("=")[0].replace(/\n/gim, "");
+    str = str.replace(listVar[i], `${key} = ${listVal[i]}`);
+  }
+  return str;
+}
+
 export const generator = () => {
   let str = dedent`LaNamNhuan   (  nam    :   Z) kq : B    
   pre   (nam>0)
