@@ -135,7 +135,11 @@ const _parsePreCondition = (cond) => {
   cond = cond.replace(/=/gi, "==");
   cond = cond.replace(/!==/gi, "!=");
 
-  return `return (${cond});\n`;
+  return `if (${cond}) {
+    return 1;
+  }
+  return 0;
+  `;
 }
 
 const _parsePostCondition = (res, cond) => {
@@ -195,6 +199,8 @@ const parseTemplateCheck = (functionName, input, pre) => {
         if (pre.length == 0)
           res = 'return 1;\n';
         else res = _parsePreCondition(pre);
+
+        return res;
       })()}
     }
   `
@@ -232,6 +238,12 @@ export const convertToCSharp_display = (formal) => {
       ${parseTemplateInput(par.functionName, par.input)}
       ${parseTemplateOutput(par.functionName, par.output)}
       ${parseTemplateCheck(par.functionName, par.input, par.preCondition)}
+
+      public ${parseFuncName(par.functionName, par.output)}(${parseParams(par.input)}) {
+        ${parseOutput(par.output)}
+        ${parsePostCondition(par.post)}
+        ${parseOutput(par.output, 'return')}
+      }
 
       public static void Main(string[] args)
       {
