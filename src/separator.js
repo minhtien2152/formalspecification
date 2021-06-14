@@ -46,7 +46,7 @@ const handleParentheses = (str) => {
 //console.log(handleParentheses(" (nam%4 = 0)    && (nam%100!=0)) "));
 
 // prepare input for C# fiddle
-// cannot execute readline command
+// cannot execute ReadLine command
 export const CSharpApiEncodeStr = (s) => {
   var el = document.createElement("div");
   el.innerText = el.textContent = s;
@@ -56,16 +56,20 @@ export const CSharpApiEncodeStr = (s) => {
 }
 
 const postHandle = (post) => {
-  let postArr = post.replace(/\n/g, "").split("||");
+  let postArr = post.split("||");
 
   postArr = postArr.map((r) => {
     const pos = r.indexOf("&&");
-    console.log(pos);
-    const result = r.substring(0, pos).replace(/(\(|\))/gim, "");
+    if (pos > 0) {
+      const result = r.substring(0, pos).replace(/(\(|\))/gim, "");
 
-    const cond = r.substring(pos + 2).replace(/(\(|\))/gim, "");
-
-    return { result, cond };
+      const cond = r.substring(pos + 2).replace(/(\(|\))/gim, "");
+      console.log(result);
+      return { result, cond };
+    } else {
+      const result = post.replace(/(\(|\))/gim, "");
+      return { result, cond: "" };
+    }
   });
   return postArr;
 };
@@ -113,34 +117,55 @@ const getCSharpParseType = (str) => {
   return '';
 }
 
-const parseFunctionPrompt = (input, functionName) => {
-  let inputPrompt = '', funcCall = functionName + '(';
-  input.forEach(x => {
-    inputPrompt += `Console.Write("${x[0]} = ");\n`;
-    inputPrompt += `${getCSharpType(x[1])} ${x[0]} = ${getCSharpParseType(x[1])}(Console.ReadLine());\n`;
-  });
-
-  input.forEach(x => {
-    funcCall += `${x[0]}, `;
-  });
-  if (input.length > 0)
-    funcCall = `Console.WriteLine(${funcCall.slice(0, -2)}));\n`;
-
-  
-  return inputPrompt + funcCall;
+const getCSharpDefaultVal = (str) => {
+  switch (str) {
+    case 'z': case 'Z': case 'n': case 'N': case 'r': case 'R': return '0';
+    case 'b': case 'B': return 'false';
+    case 'char*': case 'CHAR*': return '""';
+  }
+  return '';
 }
 
-const parseCondition = (res, cond) => {
+const parseFunctionPrompt = (input, output, functionName) => {
+  let inputPrompt = '', funcCall = functionName + '(';
+  input.forEach(x => {
+    inputPrompt += `${getCSharpType(x[1])} ${x[0]} = ${getCSharpDefaultVal(x[1])};\n`;
+  });
+  inputPrompt += `${getCSharpType(output[0][1])} ${output[0][0]} = ${getCSharpDefaultVal(output[0][1])};\n`;
+  return inputPrompt;
+}
+
+const _parsePreCondition = (cond) => {
+  if (cond == "")
+    cond = "true"
   cond = cond.replace(/=/gi, "==");
   cond = cond.replace(/!==/gi, "!=");
+  cond = cond.replace(/>==/gi, "!=");
+  cond = cond.replace(/<==/gi, "!=");
+
+  return `if (${cond}) {
+    return 1;
+  }
+  return 0;
+  `;
+}
+
+const _parsePostCondition = (res, cond) => {
+  if (cond == "")
+    cond = "true"
+  cond = cond.replace(/=/gi, "==");
+  cond = cond.replace(/!==/gi, "!=");
+  cond = cond.replace(/>==/gi, "!=");
+  cond = cond.replace(/<==/gi, "!=");
   res = res.replace(/FALSE|TRUE/gi, x => x.toLowerCase());
+
   return `if (${cond}) ${res};\n`
 }
 
-const parsePostCond = (post) => {
+const parsePostCondition = (post) => {
   let arr = '';
   post.forEach(x => {
-    arr += parseCondition(x.result, x.cond);
+    arr += _parsePostCondition(x.result, x.cond);
   });
   return arr;
 }
@@ -155,13 +180,59 @@ const parseFuncName = (functionName, output) => {
   return `${getCSharpType(output[0][1])} ${functionName}`
 }
 
+const parseTemplateInput = (functionName, input) => {
+  return `
+    public void  Nhap_${functionName}(${parseParams(input, true)}) {
+      ${(() => {
+        let res = '';
+        input.forEach(x => {
+          res += `Console.WriteLine("Nhap ${x[0]}: ");\n`;
+          res += `${x[0]} = ${getCSharpParseType(x[1])}(Console.ReadLine());\n`;
+        });
+        return res;
+      })()}
+    }
+  `
+}
+
+const parseTemplateOutput = (functionName, output) => {
+  return `
+    public void Xuat_${functionName}(${parseParams(output)}) {
+      Console.WriteLine("Ket qua la: {0} ", ${output[0][0]});\n
+    }
+  `
+}
+
+const parseTemplateCheck = (functionName, input, pre) => {
+  console.log(pre);
+  return `
+    public int KiemTra_${functionName}(${parseParams(input)}) {
+      ${(() => {
+        let res = '';
+        if (pre.length == 0)
+          res = 'return 1;\n';
+        else res = _parsePreCondition(pre);
+
+        return res;
+      })()}
+    }
+  `
+}
+
 /**
  * @param {Array} input
  */
-const parseParams = (input) => {
+const parseParams = (input, isRef = false, type = true) => {
   let res = '';
   input.forEach(x => {
-    res += `${getCSharpType(x[1])} ${x[0]},`;
+    if (isRef) {
+      if (type) res += `ref ${getCSharpType(x[1])} ${x[0]},`;
+      else res += `ref ${x[0]},`;
+    }
+    else {
+      if (type) res += `${getCSharpType(x[1])} ${x[0]},`;
+      else res += `${x[0]},`;
+    }
   });
   if (res.length > 0)
     res = res.slice(0, -1);
@@ -170,21 +241,39 @@ const parseParams = (input) => {
 }
 
 export const convertToCSharp_display = (formal) => {
-  const par = separateFormal(dedent(formal));
+  const par = separateFormal(dedent(formal)); console.log(par);
   const str = dedent`
   using System;
 
-  public class Program
-  {
-    public static void Main(string[] args)
+  namespace FormalSpecification {
+    public class Program
     {
-      ${parseFunctionPrompt(par.input, par.functionName)}
-    }
+      ${parseTemplateInput(par.functionName, par.input)}
+      ${parseTemplateOutput(par.functionName, par.output)}
+      ${parseTemplateCheck(par.functionName, par.input, par.preCondition)}
 
-    static ${parseFuncName(par.functionName, par.output)}(${parseParams(par.input)}) {
-      ${parseOutput(par.output)}
-      ${parsePostCond(par.post)}
-      ${parseOutput(par.output, 'return')}
+      public ${parseFuncName(par.functionName, par.output)}(${parseParams(par.input)}) {
+        ${parseOutput(par.output)}
+        ${parsePostCondition(par.post)}
+        ${parseOutput(par.output, 'return')}
+      }
+
+      public static void Main(string[] args)
+      {
+        ${parseFunctionPrompt(par.input, par.output, par.functionName)}
+
+        Program p = new Program();
+        p.Nhap_${par.functionName}(${parseParams(par.input, true, false)});
+
+        if (p.KiemTra_${par.functionName}(${parseParams(par.input, false, false)}) == 1) {
+          ${par.output[0][0]} = p.${par.functionName}(${parseParams(par.input, false, false)});
+          p.Xuat_${par.functionName}(${par.output[0][0]});
+        }
+        else {
+          Console.WriteLine("Thong tin nhap khong hop le");
+        }
+        Console.ReadLine();
+      }
     }
   }`;
   // console.log(CSharpApiEncodeStr(dedent(str))); for api query
