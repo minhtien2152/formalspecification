@@ -9,12 +9,12 @@ import * as style from './App'
 // import "prismjs/components/prism-markup";
 
 import Editor from "@monaco-editor/react";
-import { ClockLoader as Loader } from "react-spinners";
+import { ClockLoader as Loader, FadeLoader } from "react-spinners";
 
 //import "./styles.css";
 import fs from "fs";
 // import "./codeEditor.css";
-import {generator, convertToCSharp_display, CSharpApiEncodeStr} from "./separator";
+import {generator, convertToCSharp_display, CSharpApiEncodeStr, separateConsoleRead} from "./separator";
 // import CodeEditor from "./CodeEditor";
 
 export const rTabs = (str) => str.trim().replace(/^ {4}/gm, "");
@@ -55,6 +55,8 @@ const App = () => {
     }
   `))
 
+  const [consoleOutput, setConsoleOutput] = useState("");
+  const [consoleWait, setConsoleWait] = useState(false);
   const inputFileRef = useRef();
 
   const fileChangeHandler = (e) => {
@@ -80,31 +82,53 @@ const App = () => {
     setCode(rTabs(convertToCSharp_display(formal)));
   }
 
-  function handleResultDidMount() {
-
-  }
-
   function toggleTheme() {
     setTheme(theme === "light" ? "vs-dark" : "light");
   }
 
-  function handleCompileScript(encodedScript) {
-    let myHeaders = new Headers();
-    myHeaders.append("Content-Type", "application/json");
+  function handleCompileScript() {
+    setConsoleWait(true);
+    const str = separateConsoleRead(dedent(code));
+    const encodedScript = CSharpApiEncodeStr(str);
 
-    let raw = JSON.stringify({"Compiler":1,"Language":1,"ProjectType":1,"CodeBlock":encodedScript});
+    var axios = require('axios');
+    var data = JSON.stringify({"Compiler":1,"Language":1,"ProjectType":1,"CodeBlock":encodedScript});
 
-    let requestOptions = {
-      method: 'POST',
-      headers: myHeaders,
-      body: raw,
-      redirect: 'follow'
+    var config = {
+      method: 'post',
+      url: '/fiddles/',
+      headers: { 
+        'Content-Type': 'application/json'
+      },
+      data : data
     };
 
-    fetch("https://dotnetfiddle.net/api/fiddles/", requestOptions)
-      .then(response => response.text())
-      .then(result => console.log(result))
-      .catch(error => console.log('error', error));
+    axios(config)
+    .then(function (response) {
+      const res = JSON.parse(JSON.stringify(response.data));
+      setConsoleOutput(res["ConsoleOutput"]);
+      setConsoleWait(false);
+    })
+    .catch(function (error) {
+      console.log(error);
+    });
+
+    // let myHeaders = new Headers();
+    // myHeaders.append("Content-Type", "application/json");
+
+    // let raw = JSON.stringify({"Compiler":1,"Language":1,"ProjectType":1,"CodeBlock":encodedScript});
+
+    // let requestOptions = {
+    //   method: 'POST',
+    //   headers: myHeaders,
+    //   body: raw,
+    //   redirect: 'follow'
+    // };
+
+    // fetch("https://dotnetfiddle.net/api/fiddles/", requestOptions)
+    //   .then(response => response.text())
+    //   .then(result => console.log(result))
+    //   .catch(error => console.log('error', error));
   }
 
   return (
@@ -141,7 +165,7 @@ const App = () => {
         </div>
         {/* xử lý output chỗ này */}
         <div key="2" style={{display: 'flex-box', padding: '5px'}}>
-          <button class="control" onClick={() => handleCompileScript(CSharpApiEncodeStr(dedent(code)))}>
+          <button class="control" onClick={handleCompileScript}>
             <i class="fas fa-cogs"></i>
           </button>
         </div>
@@ -178,11 +202,15 @@ const App = () => {
           />
         </div>
       </div>
+
       <div style={{width: '95%', height: '25vh', padding: '10px'}}>
         <div style={{border: '1px solid black', width: '100%', height: '100%', overflowX: 'hidden', padding: '7px'}}>
           <h3 style={{marginTop: '0px'}}>Output</h3>
           <div>
-            output 
+            <FadeLoader size={50} loading={consoleWait}/>
+          </div>
+          <div>
+            {consoleOutput}
           </div>
         </div>
       </div>
