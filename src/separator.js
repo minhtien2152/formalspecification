@@ -1,5 +1,4 @@
 import dedent from "dedent";
-import indentString from 'indent-string';
 
 const remove_character = (str, char_pos) => {
   const part1 = str.substring(0, char_pos);
@@ -45,6 +44,16 @@ const handleParentheses = (str) => {
   return sub_Str;
 };
 //console.log(handleParentheses(" (nam%4 = 0)    && (nam%100!=0)) "));
+
+// prepare input for C# fiddle
+// cannot execute readline command
+export const CSharpApiEncodeStr = (s) => {
+  var el = document.createElement("div");
+  el.innerText = el.textContent = s;
+  s = el.innerHTML.replace(/<br ?\/?>/g, "")
+    .replace(/"/g, "&quot;");
+  return s;
+}
 
 const postHandle = (post) => {
   let postArr = post.replace(/\n/g, "").split("||");
@@ -95,23 +104,36 @@ const getCSharpType = (str) => {
 
 const getCSharpParseType = (str) => {
   switch (str) {
-    case 'z': case 'Z': return 'float.parse';
-    case 'n': case 'N': return 'int.parse';
-    case 'r': case 'R': return 'double.parse';
-    case 'b': case 'B': return 'bool.parse';
-    case 'char*': case 'CHAR*': return 'string';
+    case 'z': case 'Z': return 'float.Parse';
+    case 'n': case 'N': return 'int.Parse';
+    case 'r': case 'R': return 'double.Parse';
+    case 'b': case 'B': return 'bool.Parse';
+    case 'char*': case 'CHAR*': return '(string)';
   }
   return '';
 }
 
-const parseInputPrompt = (input) => {
+const parseFunctionPrompt = (input, functionName) => {
+  let inputPrompt = '', funcCall = functionName + '(';
+  input.forEach(x => {
+    inputPrompt += `Console.Write("${x[0]} = ");\n`;
+    inputPrompt += `${getCSharpType(x[1])} ${x[0]} = ${getCSharpParseType(x[1])}(Console.ReadLine());\n`;
+  });
 
+  input.forEach(x => {
+    funcCall += `${x[0]}, `;
+  });
+  if (input.length > 0)
+    funcCall = `Console.WriteLine(${funcCall.slice(0, -2)}));\n`;
+
+  
+  return inputPrompt + funcCall;
 }
 
 const parseCondition = (res, cond) => {
   cond = cond.replace(/=/gi, "==");
   cond = cond.replace(/!==/gi, "!=");
-  res = res.replace(/FALSE|TRUE/gi, x => x.toLowerCase())
+  res = res.replace(/FALSE|TRUE/gi, x => x.toLowerCase());
   return `if (${cond}) ${res};\n`
 }
 
@@ -147,24 +169,26 @@ const parseParams = (input) => {
   return res;
 }
 
-const convertToCSharp = (par) => {
+export const convertToCSharp_display = (formal) => {
+  const par = separateFormal(dedent(formal));
   const str = dedent`
   using System;
 
   public class Program
   {
-    static void Main(string[] args)
+    public static void Main(string[] args)
     {
-      Console.WriteLine("Hello World!");
+      ${parseFunctionPrompt(par.input, par.functionName)}
     }
 
     static ${parseFuncName(par.functionName, par.output)}(${parseParams(par.input)}) {
       ${parseOutput(par.output)}
-      ${parsePostCond()}
+      ${parsePostCond(par.post)}
       ${parseOutput(par.output, 'return')}
     }
   }`;
-  return indentString(dedent(str), 4, {indent: " "});
+  // console.log(CSharpApiEncodeStr(dedent(str))); for api query
+  return dedent(str);
 }
 
 export const generator = () => {
@@ -188,7 +212,7 @@ export const generator = () => {
   ( (kq = TRUE) && (nam%400=0))
 `;
   console.log(separateFormal(str));
-  return convertToCSharp(separateFormal(str));
+  return convertToCSharp_display(separateFormal(str));
 };
 
 const post = dedent`( 

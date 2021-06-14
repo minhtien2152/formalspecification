@@ -33,7 +33,7 @@ main {
   text-align: center;
   position: relative;
   width: 750px;
-  height: 30px;
+  height: 33px;
   background-color: #fafafa;
   border-radius: 5px 5px 0 0;
   -moz-border-radius: 5px 5px 0 0;
@@ -51,7 +51,7 @@ main {
   -moz-box-sizing: border-box;
   -o-box-sizing: border-box;
   -webkit-box-sizing: border-box;
-
+  min-height: 250px;
   width: 750px;
   text-align: left;
   background-color: #473431;
@@ -78,14 +78,14 @@ main {
   -webkit-border-radius: 5px 5px 0 0;
 } */
 
-.code-editor span.control:before {
+.code-editor span.control {
   box-sizing: border-box;
   -moz-box-sizing: border-box;
   -o-box-sizing: border-box;
   -webkit-box-sizing: border-box;
 
   position: absolute;
-  z-index: 1;
+
   -webkit-transition: all 0.5s ease-in-out;
   -moz-transition: wall 0.5s ease-in-out;
   -o-transition: all 0.5s ease-in-out;
@@ -94,25 +94,40 @@ main {
   left: 5px;
   z-index: 2;
   padding: 6px;
-  border-radius: 20px;
+  height: 29px;
+  width: 29px;
+  text-align: center;
+
+  margin-left: 5px;
+  border-radius: 50%;
   -moz-border-radius: 20px;
   -o-border-radius: 20px;
   -webkit-border-radius: 20px;
 }
 
-.code-editor span.control:nth-child(1):before {
-  margin-left: 15px;
-  background-color: #df6963;
+.code-editor span.control i {
+  margin: auto 0;
 }
 
-.code-editor span.control:nth-child(2):before {
-  margin-left: 35px;
+.code-editor span.control:nth-child(1) {
+  margin-left: 5px;
+  color: #97c38a;
+  background-color: #97c38a;
+}
+
+.code-editor span.control:nth-child(2) {
+  margin-left: 40px;
+  color: #f5e18a;
   background-color: #f5e18a;
 }
 
-.code-editor span.control:nth-child(3):before {
-  margin-left: 55px;
-  background-color: #97c38a;
+.code-editor span.control:nth-child(3) {
+  margin-left: 75px;
+  color: #df6963;
+  background-color: #df6963;
+}
+.code-editor span.control:hover {
+  color: white;
 }
 
 /* -- iPad Screen -- */
@@ -291,4 +306,7 @@ pre.line-numbers > code {
 
 .container__editor {
   color: white;
+}
+.container__editor textarea {
+  outline: 0;
 }
