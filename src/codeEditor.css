@@ -307,3 +307,6 @@ pre.line-numbers > code {
 .container__editor {
   color: white;
 }
+.container__editor textarea {
+  outline: 0;
+}
