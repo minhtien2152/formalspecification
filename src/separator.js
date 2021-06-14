@@ -1,4 +1,5 @@
 import dedent from "dedent";
+import indentString from 'indent-string';
 
 const remove_character = (str, char_pos) => {
   const part1 = str.substring(0, char_pos);
@@ -59,14 +60,112 @@ const postHandle = (post) => {
   });
   return postArr;
 };
+
 const paramsHandle = (arr) => {
   const params = arr.split(",");
   const result = params.map((param) => {
     return param.split(":");
   });
-  if (result.length === 1) return result[0];
+  if (result.length === 1) return [result[0]];
   return result;
 };
+
+const separateFormal = (str) => {
+  str = str.replaceAll(" ", "").split("\npre");
+  const functionName = str[0].split("(")[0].trim();
+  const params = str[0].split("(")[1].split(")");
+  const input = paramsHandle(params[0]);
+  const output = paramsHandle(params[1]);
+  const preCondition = str[1].split("\npost")[0].replace(/(\(|\))/gim, "");
+  let post = str[1].split("\npost")[1];
+  post = postHandle(post.replace(/\n/g, ""));
+  return { functionName, input, output, preCondition, post };
+}
+
+const getCSharpType = (str) => {
+  switch (str) {
+    case 'z': case 'Z': return 'float';
+    case 'n': case 'N': return 'int';
+    case 'r': case 'R': return 'double';
+    case 'b': case 'B': return 'bool';
+    case 'char*': case 'CHAR*': return 'string';
+  }
+  return '';
+}
+
+const getCSharpParseType = (str) => {
+  switch (str) {
+    case 'z': case 'Z': return 'float.parse';
+    case 'n': case 'N': return 'int.parse';
+    case 'r': case 'R': return 'double.parse';
+    case 'b': case 'B': return 'bool.parse';
+    case 'char*': case 'CHAR*': return 'string';
+  }
+  return '';
+}
+
+const parseInputPrompt = (input) => {
+
+}
+
+const parseCondition = (res, cond) => {
+  cond = cond.replace(/=/gi, "==");
+  cond = cond.replace(/!==/gi, "!=");
+  res = res.replace(/FALSE|TRUE/gi, x => x.toLowerCase())
+  return `if (${cond}) ${res};\n`
+}
+
+const parsePostCond = (post) => {
+  let arr = '';
+  post.forEach(x => {
+    arr += parseCondition(x.result, x.cond);
+  });
+  return arr;
+}
+
+const parseOutput = (output, mode) => {
+  if (mode === 'return')
+    return `return (${getCSharpType(output[0][1])})${output[0][0]};\n`
+  return `object ${output[0][0]} = null;\n`;
+}
+
+const parseFuncName = (functionName, output) => {
+  return `${getCSharpType(output[0][1])} ${functionName}`
+}
+
+/**
+ * @param {Array} input
+ */
+const parseParams = (input) => {
+  let res = '';
+  input.forEach(x => {
+    res += `${getCSharpType(x[1])} ${x[0]},`;
+  });
+  if (res.length > 0)
+    res = res.slice(0, -1);
+  
+  return res;
+}
+
+const convertToCSharp = (par) => {
+  const str = dedent`
+  using System;
+
+  public class Program
+  {
+    static void Main(string[] args)
+    {
+      Console.WriteLine("Hello World!");
+    }
+
+    static ${parseFuncName(par.functionName, par.output)}(${parseParams(par.input)}) {
+      ${parseOutput(par.output)}
+      ${parsePostCond()}
+      ${parseOutput(par.output, 'return')}
+    }
+  }`;
+  return indentString(dedent(str), 4, {indent: " "});
+}
 
 export const generator = () => {
   let str = dedent`LaNamNhuan   (  nam    :   Z) kq : B    
@@ -88,16 +187,8 @@ export const generator = () => {
   ||
   ( (kq = TRUE) && (nam%400=0))
 `;
-
-  str = str.replaceAll(" ", "").split("\npre");
-  const functionName = str[0].split("(")[0].trim();
-  const params = str[0].split("(")[1].split(")");
-  const input = paramsHandle(params[0]);
-  const output = paramsHandle(params[1]);
-  const preCondition = str[1].split("\npost")[0].replace(/(\(|\))/gim, "");
-  let post = str[1].split("\npost")[1];
-  post = postHandle(post.replace(/\n/g, ""));
-  return { functionName, input, output, preCondition, post };
+  console.log(separateFormal(str));
+  return convertToCSharp(separateFormal(str));
 };
 
 const post = dedent`( 

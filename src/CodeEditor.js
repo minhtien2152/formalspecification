@@ -1,5 +1,6 @@
 import React from "react";
 import "./codeEditor.css";
+
 const CodeEditor = ({ children }) => {
   return (
     <div class="code-editor">

@@ -25,7 +25,7 @@ const App = () => {
 
   return (
     <main className="container">
-      <button onClick={() => console.log(code)}>a</button>
+      <button onClick={() => console.log(code)}>console code</button>
       <CodeEditor>
         <Editor
           placeholder="Type some code…"
