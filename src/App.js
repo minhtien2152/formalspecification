@@ -71,12 +71,12 @@ const App = () => {
   }
 
   function handleConvertToCSharp() {
-    try {
-      convertToCSharp_display(formal);
-    } catch (e) {
-      alert("wrong formal specification format");
-      return;
-    }
+    // try {
+    //   convertToCSharp_display(formal);
+    // } catch (e) {
+    //   alert("wrong formal specification format");
+    //   return;
+    // }
     setCode(rTabs(convertToCSharp_display(formal)));
   }
 
