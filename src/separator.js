@@ -104,9 +104,10 @@ const separateFormal = (str) => {
 
 const getCSharpType = (str) => {
   switch (str) {
-    case 'z': case 'Z': return 'float';
+    case 'z': case 'Z': return 'int';
     case 'n': case 'N': return 'int';
-    case 'r': case 'R': return 'double';
+    case 'n*': case 'N*': return 'int';
+    case 'r': case 'R': return 'float';
     case 'b': case 'B': return 'bool';
     case 'char*': case 'CHAR*': return 'string';
   }
@@ -115,9 +116,10 @@ const getCSharpType = (str) => {
 
 const getCSharpParseType = (str) => {
   switch (str) {
-    case 'z': case 'Z': return 'float.Parse';
+    case 'z': case 'Z': return 'int.Parse';
     case 'n': case 'N': return 'int.Parse';
-    case 'r': case 'R': return 'double.Parse';
+    case 'n*': case 'N*': return 'int.Parse';
+    case 'r': case 'R': return 'float.Parse';
     case 'b': case 'B': return 'bool.Parse';
     case 'char*': case 'CHAR*': return '(string)';
   }
@@ -126,7 +128,7 @@ const getCSharpParseType = (str) => {
 
 const getCSharpDefaultVal = (str) => {
   switch (str) {
-    case 'z': case 'Z': case 'n': case 'N': case 'r': case 'R': return '0';
+    case 'z': case 'Z': case 'n': case 'N': case 'n*': case 'N*': case 'r': case 'R': return '0';
     case 'b': case 'B': return 'false';
     case 'char*': case 'CHAR*': return '""';
   }
@@ -180,8 +182,8 @@ const parsePostCondition = (post) => {
 
 const parseOutput = (output, mode) => {
   if (mode === 'return')
-    return `return (${getCSharpType(output[0][1])})${output[0][0]};\n`
-  return `object ${output[0][0]} = null;\n`;
+    return `return ${output[0][0]};\n`
+  return `${getCSharpType(output[0][1])} ${output[0][0]} = ${getCSharpDefaultVal(output[0][1])};\n`;
 }
 
 const parseFuncName = (functionName, output) => {
@@ -219,6 +221,17 @@ const parseTemplateCheck = (functionName, input, pre) => {
   console.log(pre);
   return `
     \tpublic int KiemTra_${functionName}(${parseParams(input)}) {
+      ${(() => {
+        let res = "";
+
+        input.forEach(x => {
+          if (x[1].toLowerCase() === 'n')
+            res += `\n\t\t\tif (${x[0]} < 0) return 0;`
+          if (x[1].toLowerCase() === 'n*')
+            res += `\n\t\t\tif (${x[0]} <= 0) return 0;`
+        })
+        return res;
+      })()}
       ${(() => {
         let res = "";
         if (pre.length == 0)
