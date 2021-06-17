@@ -6,6 +6,13 @@ const remove_character = (str, char_pos) => {
   return part1 + part2;
 };
 
+const getTabIndent = (count) => {
+  let res = '';
+  for (let i = 0; i < count; i++)
+    res += '\t';
+  return res;
+}
+
 const handleParentheses = (str) => {
   let pair_num = -1;
   let current_pair = -1;
@@ -127,11 +134,11 @@ const getCSharpDefaultVal = (str) => {
 }
 
 const parseFunctionPrompt = (input, output, functionName) => {
-  let inputPrompt = '', funcCall = functionName + '(';
+  let inputPrompt = '\n', funcCall = functionName + '(';
   input.forEach(x => {
-    inputPrompt += `${getCSharpType(x[1])} ${x[0]} = ${getCSharpDefaultVal(x[1])};\n`;
+    inputPrompt += `\t\t\t${getCSharpType(x[1])} ${x[0]} = ${getCSharpDefaultVal(x[1])};\n`;
   });
-  inputPrompt += `${getCSharpType(output[0][1])} ${output[0][0]} = ${getCSharpDefaultVal(output[0][1])};\n`;
+  inputPrompt += `\t\t\t${getCSharpType(output[0][1])} ${output[0][0]} = ${getCSharpDefaultVal(output[0][1])};\n`;
   return inputPrompt;
 }
 
@@ -143,10 +150,11 @@ const _parsePreCondition = (cond) => {
   cond = cond.replace(/>==/gi, "!=");
   cond = cond.replace(/<==/gi, "!=");
 
-  return `if (${cond}) {
-    return 1;
-  }
-  return 0;
+  return `
+        if (${cond}) {
+          return 1;
+        }
+        return 0;
   `;
 }
 
@@ -163,9 +171,9 @@ const _parsePostCondition = (res, cond) => {
 }
 
 const parsePostCondition = (post) => {
-  let arr = '';
+  let arr = `\n`;
   post.forEach(x => {
-    arr += _parsePostCondition(x.result, x.cond);
+    arr += '\t\t\t' + _parsePostCondition(x.result, x.cond);
   });
   return arr;
 }
@@ -182,40 +190,42 @@ const parseFuncName = (functionName, output) => {
 
 const parseTemplateInput = (functionName, input) => {
   return `
-    public void  Nhap_${functionName}(${parseParams(input, true)}) {
+    \tpublic void Nhap_${functionName}(${parseParams(input, true)}) {
       ${(() => {
         let res = '';
         input.forEach(x => {
-          res += `Console.WriteLine("Nhap ${x[0]}: ");\n`;
-          res += `${x[0]} = ${getCSharpParseType(x[1])}(Console.ReadLine());\n`;
+          res = `
+        Console.WriteLine("Nhap ${x[0]}: ");
+        ${x[0]} = ${getCSharpParseType(x[1])}(Console.ReadLine());`;
         });
         return res;
       })()}
-    }
+    \t}
   `
 }
 
 const parseTemplateOutput = (functionName, output) => {
   return `
-    public void Xuat_${functionName}(${parseParams(output)}) {
-      Console.WriteLine("Ket qua la: {0} ", ${output[0][0]});\n
-    }
+    \tpublic void Xuat_${functionName}(${parseParams(output)}) {
+        Console.WriteLine("Ket qua la: {0} ", ${output[0][0]});
+    \t}
   `
 }
 
 const parseTemplateCheck = (functionName, input, pre) => {
   console.log(pre);
   return `
-    public int KiemTra_${functionName}(${parseParams(input)}) {
+    \tpublic int KiemTra_${functionName}(${parseParams(input)}) {
       ${(() => {
-        let res = '';
+        let res = "";
         if (pre.length == 0)
-          res = 'return 1;\n';
+          res = `
+        return 1;`;
         else res = _parsePreCondition(pre);
 
         return res;
       })()}
-    }
+    \t}
   `
 }
 
@@ -241,7 +251,7 @@ const parseParams = (input, isRef = false, type = true) => {
 }
 
 export const convertToCSharp_display = (formal) => {
-  const par = separateFormal(dedent(formal)); console.log(par);
+  const par = separateFormal((formal)); console.log(par);
   const str = dedent`
   using System;
 
@@ -277,7 +287,7 @@ export const convertToCSharp_display = (formal) => {
     }
   }`;
   // console.log(CSharpApiEncodeStr(dedent(str))); for api query
-  return dedent(str);
+  return (str);
 }
 
 export const separateConsoleRead = (str) => {
@@ -287,7 +297,7 @@ export const separateConsoleRead = (str) => {
 
   const listVal = [];
   for (let i = 0; i < listVar.length; i++) {
-    const key = listVar[i].split("=")[0].replace(/\n/gim, "");
+    const key = listVar[i].split("=")[0].replace(/\n/gim, " ").trim().split(" ").pop();
     listVal.push(window.prompt(`Nhap ${key}:`, ''));
   }
 
@@ -299,7 +309,7 @@ export const separateConsoleRead = (str) => {
 }
 
 export const generator = () => {
-  let str = dedent`LaNamNhuan   (  nam    :   Z) kq : B    
+  let str = `LaNamNhuan   (  nam    :   Z) kq : B    
   pre   (nam>0)
   post 
   ( 
@@ -322,7 +332,7 @@ export const generator = () => {
   return convertToCSharp_display(separateFormal(str));
 };
 
-const post = dedent`( 
+const post = `( 
   (kq = FALSE) && (nam%4 !=0)
 ) 
 ||

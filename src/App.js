@@ -17,13 +17,11 @@ import fs from "fs";
 import {generator, convertToCSharp_display, CSharpApiEncodeStr, separateConsoleRead} from "./separator";
 // import CodeEditor from "./CodeEditor";
 
-export const rTabs = (str) => str.trim().replace(/^ {4}/gm, "");
-
 const App = () => {
   const [theme, setTheme] = useState("light");
   const [isEditorReady, setIsEditorReady] = useState(false);
 
-  const [formal, setFormal] = useState(rTabs(dedent(`LaNamNhuan   (  nam    :   Z) kq : B    
+  const [formal, setFormal] = useState((dedent(`LaNamNhuan   (  nam    :   Z) kq : B    
   pre   (nam>0)
   post 
   ( 
@@ -43,7 +41,7 @@ const App = () => {
   ( (kq = TRUE) && (nam%400=0))
   `)))
 
-  const [code, setCode] = useState(rTabs(`
+  const [code, setCode] = useState((`
     using System;
 
     public class Program
@@ -79,7 +77,7 @@ const App = () => {
     //   alert("wrong formal specification format");
     //   return;
     // }
-    setCode(rTabs(convertToCSharp_display(formal)));
+    setCode((convertToCSharp_display(formal)));
   }
 
   function toggleTheme() {
@@ -88,7 +86,7 @@ const App = () => {
 
   function handleCompileScript() {
     setConsoleWait(true);
-    const str = separateConsoleRead(dedent(code));
+    const str = separateConsoleRead((code));
     const encodedScript = CSharpApiEncodeStr(str);
 
     var axios = require('axios');
