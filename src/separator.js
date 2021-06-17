@@ -189,12 +189,15 @@ const parseFuncName = (functionName, output) => {
 }
 
 const parseTemplateInput = (functionName, input) => {
+  console.log(parseParams(input, true));
+  console.log(input);
+
   return `
     \tpublic void Nhap_${functionName}(${parseParams(input, true)}) {
       ${(() => {
         let res = '';
         input.forEach(x => {
-          res = `
+          res += `
         Console.WriteLine("Nhap ${x[0]}: ");
         ${x[0]} = ${getCSharpParseType(x[1])}(Console.ReadLine());`;
         });
