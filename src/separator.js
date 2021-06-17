@@ -147,8 +147,8 @@ const _parsePreCondition = (cond) => {
     cond = "true"
   cond = cond.replace(/=/gi, "==");
   cond = cond.replace(/!==/gi, "!=");
-  cond = cond.replace(/>==/gi, "!=");
-  cond = cond.replace(/<==/gi, "!=");
+  cond = cond.replace(/>==/gi, ">=");
+  cond = cond.replace(/<==/gi, "<=");
 
   return `
         if (${cond}) {
@@ -163,8 +163,8 @@ const _parsePostCondition = (res, cond) => {
     cond = "true"
   cond = cond.replace(/=/gi, "==");
   cond = cond.replace(/!==/gi, "!=");
-  cond = cond.replace(/>==/gi, "!=");
-  cond = cond.replace(/<==/gi, "!=");
+  cond = cond.replace(/>==/gi, ">=");
+  cond = cond.replace(/<==/gi, "<=");
   res = res.replace(/FALSE|TRUE/gi, x => x.toLowerCase());
 
   return `if (${cond}) ${res};\n`
